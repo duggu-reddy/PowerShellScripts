@@ -16,7 +16,7 @@
 
 .NOTES
   Version:        2.0
-  Author:         Narasimha R Duggu/ Narduggu@in.ib.com
+  Author:         Narasimha R Duggu/ duggu.narasimhareddy@gmail.com
   Creation Date:  20201212
 
 .EXAMPLE
@@ -28,7 +28,7 @@
 
 $Reporttime=(Get-Date).ToString('yyyy-MM-dd-hh-mm')
 $report=@()
-$AzSubs = (Get-AzSubscription).Name | ?{$_ -ne 'KT-SHARED-StorSimpleGL'}
+$AzSubs = (Get-AzSubscription).Name | ?{$_ -ne 'Exclude_sub_name'} #If you want to exclude any specific subscription.
 foreach($sub in $AzSubs){
     Select-AzSubscription -Subscription "$sub"
     $listss = Get-AzResource -ResourceType Microsoft.StorageSync/storageSyncServices | Select-Object -Property Name,ResourceGroupName
@@ -76,6 +76,8 @@ foreach($sub in $AzSubs){
             ## Get Tagging Details
             $Tags = Get-AzTag -ResourceId $StorageDetails.StorageAccountResourceId | Select-Object -Property Properties
             $opco = $Tags.Properties.TagsProperty.opco
+            
+            
             $data = New-Object PSObject
             $data | Add-Member NoteProperty OpCo -Value $opco
             $data | Add-Member NoteProperty ServerName -Value $ServerName
@@ -111,7 +113,7 @@ Import-Csv -Delimiter ',' 'C:/output.csv' |ConvertTo-Html -Head $htmlformat -Bod
 #>
 
 # Prepare Pivot Table
-Import-Csv C:\output.csv | Export-Excel -WorksheetName SyncReport "C:\OpCo-SyncReport-$Reporttime.xlsx" -DisplayPropertySet -TableName ServiceTable `
+Import-Csv C:\output.csv | Export-Excel -WorksheetName SyncReport "C:\SyncReport-$Reporttime.xlsx" -DisplayPropertySet -TableName ServiceTable `
     -IncludePivotTable `
     -PivotRows 'OpCo','ServerName' `
     -PivotColumns 'SyncActivity' `
