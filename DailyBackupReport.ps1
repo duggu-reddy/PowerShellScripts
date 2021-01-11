@@ -16,22 +16,24 @@
 
 .NOTES
   Version:        1.0
-  Author:         Narasimha R Duggu/ Narduggu@in.ib.com
+  Author:         Narasimha R Duggu/ duggu.narasimhareddy@gmail.com
   Creation Date:  20210108
 
 .EXAMPLE
- powershell.exe -ExecutionPolicy ByPass -File .\OpCo-AzDailyBackupJobs.ps1'
+ powershell.exe -ExecutionPolicy ByPass -File .\AzDailyBackupJobs.ps1'
 
 .EXAMPLE
-.\OpCo-AzDailyBackupJobs.ps1
+.\AzDailyBackupJobs.ps1
 #>
 
 
 $report=@()
 $Reporttime=(Get-Date).ToString('yyyy-MM-dd-hh-mm')
-$AzSubs = (Get-AzSubscription).Name | ?{$_ -ne 'KT-SHARED-StorSimpleGL'}
+$AzSubs = (Get-AzSubscription).Name | ?{$_ -ne 'company_sub_name'} #If you want to exclude any scription
 foreach($sub in $AzSubs){
     Select-AzSubscription -Subscription "$sub"
+    
+    #Get Recovery Services Vault
     $rv = Get-AzRecoveryServicesVault | Select-Object -Property Name,ResourceGroupName,ID,Location
     
     foreach($vault in $rv){
@@ -39,10 +41,14 @@ foreach($sub in $AzSubs){
         $rg = $vault.ResourceGroupName
         $rvid = $vault.ID
         $location = $vault.Location
+        
+        # Get the Tag Details
         $Tags = Get-AzTag -ResourceId $rvid | Select-Object -Property Properties
         $opco = $Tags.Properties.TagsProperty.opco
         $SAccounts = Get-AzRecoveryServicesBackupContainer -ContainerType AzureStorage -Status Registered -VaultId $rvid
         $Jobs = Get-AzRecoveryServicesBackupJob -Operation Backup -From (Get-Date).AddDays(-7).ToUniversalTime() -VaultId $rvid | select * #Select-Object -Property WorkloadName,Operation,Status,StartTime,EndTime
+        
+        # Get Storage Account Details
         foreach($sa in $SAccounts){
                        
             $Sharename = (Get-AzRecoveryServicesBackupItem -Container $sa -WorkloadType AzureFiles -VaultId $rvid).FriendlyName
